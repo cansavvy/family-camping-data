@@ -1,0 +1,113 @@
+---
+title: "Family Camping Trip Survey 2023"
+author: "Candace Savonen"
+date: "10/31/23"
+output: html_document
+---
+
+# Report Summary: 
+
+Based on the survey results, we are going to:  
+
+- Try to find an affordable Airbnb in Michigan for Aug 4th - 11th. 
+- We'll also make some activity signup. The short form Euchre is the most in demand activity
+- Individuals will prefer to have dinner 5 - 6. Potluck style was most popular but other meal formats were also in the majority so we'll plan a meal schedule rotation of sorts that people can opt into. 
+
+
+### Some notes about how this was done: 
+
+- Note that some responses were recoded in order to make the tallies reflective of people's opinions. If you typed in an option like "all preferences are acceptable to me" then I made sure that your vote counted for each preference. 
+- Additionally, the financial information and other consideration responses have not been reported here so that is kept confidential but that information is being taken into account as well. 
+
+
+
+```{r setup, include=FALSE, collapse = TRUE, message=FALSE}
+library(googlesheets4)
+library(ggplot2)
+```
+
+
+```{r, echo = FALSE, collapse = TRUE, message=FALSE, warning = FALSE}
+survey_df <- read_sheet("https://docs.google.com/spreadsheets/d/1ZrpLI4oZibIfpym6rZ5q4xKEa7I--1LJcsUBL_WlxRc/edit?resourcekey#gid=563201357")
+
+survey_df <- survey_df %>% janitor::clean_names() 
+
+plot_it <- function(variable_name) {
+  
+quosure <- quo(!!sym(variable_name))
+  
+survey_df %>% 
+  dplyr::select(variable = !!quosure) %>% 
+  tidyr::separate_rows(variable, sep = ", ") %>%
+  dplyr::count(sum = variable) %>%
+  ggplot(aes(x = reorder(sum, -n), y = n))  + 
+  theme_minimal() +
+  geom_text(aes(label = n, y = n + 2)) + 
+  geom_histogram(position = "dodge", stat = "identity", fill = "#797EF6") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(x = "", subtitle = "", title = NULL)
+}
+```
+
+
+## Make the plots
+
+### Which are the following are the most influential in your ability to attend the camping trip? 
+
+```{r, echo = FALSE, collapse = TRUE, message=FALSE, warning = FALSE}
+plot_it("which_of_the_following_are_the_most_influential_in_your_ability_to_attend_the_camping_trip")
+ggsave("influences_prefs.png")
+```
+
+### Which locations would you be willing and able to attend? 
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+plot_it("which_locations_would_you_be_willing_and_able_to_attend")
+ggsave("Location_prefs.png")
+```
+
+### What type of lodging are you interested in? 
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+plot_it("which_type_s_of_lodging_are_you_able_and_interested_in_staying_in")
+ggsave("lodging_prefs.png")
+```
+
+### What dates work for you?
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+plot_it("what_dates_work_best_for_your_family")
+ggsave("dates_prefs.png")
+```
+
+### How many days will you stay? 
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+plot_it("by_your_best_estimation_at_this_time_how_many_days_of_the_trip_do_you_think_you_are_likely_to_attend")
+ggsave("duration_prefs.png")
+```
+
+### What activities are you interested in? 
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+survey_df %>% 
+  tidyr::separate_rows(which_activities_would_you_be_interested_in_taking_part_in_please_write_in_other_ideas_if_you_have_them, sep = ", ") %>%
+  dplyr::count(which_activities_would_you_be_interested_in_taking_part_in_please_write_in_other_ideas_if_you_have_them) %>% 
+  dplyr::arrange(desc(n)) %>% 
+  knitr::kable()
+```
+
+### What meal format would you be interested in participating in?
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+plot_it("which_of_the_following_meal_options_would_you_be_interest_in_participating_in_we_can_make_a_schedule_that_includes_all_or_none_of_these_options")
+ggsave("meal_option_prefs.png")
+```
+
+### Meal time preference 
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+plot_it("what_time_range_do_you_and_your_family_prefer_to_eat")
+ggsave("meal_time_prefs.png")
+```
+
