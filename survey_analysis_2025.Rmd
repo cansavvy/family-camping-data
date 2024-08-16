@@ -1,0 +1,126 @@
+---
+title: "Family Camping Trip Survey 2024"
+author: "Candace Savonen"
+date: "08/16/24"
+output: html_document
+---
+
+# Report Summary: 
+
+
+### Some notes about how this was done: 
+
+
+```{r setup, include=FALSE, collapse = TRUE, message=FALSE}
+library(googlesheets4)
+library(ggplot2)
+```
+
+
+```{r, echo = FALSE, collapse = TRUE, message=FALSE, warning = FALSE}
+survey_df <- read_sheet("https://docs.google.com/spreadsheets/d/1DEouR8aQ-nC5mwx359QW2ecIOF0ITGX4djmojJuQ-Tk/edit?resourcekey=&gid=1609651608#gid=1609651608")
+
+survey_df <- survey_df %>% janitor::clean_names() %>% 
+  dplyr::rename(top_choice = of_the_following_choices_which_would_be_your_top_choice_for_location_next_year, 
+                second_choice = of_the_following_choices_which_would_be_your_second_choice_for_location_next_year, 
+                biannual_vote = would_you_be_open_to_a_biannual_camp_schedule_where_the_full_family_camp_happens_every_other_year_in_the_in_between_years_families_could_still_get_together_but_potentially_splitting_into_multiple_groups_allowing_more_flexibility_on_timing_and_location_these_spin_off_trips_would_be_easier_to_allow_folks_to_accommodate_their_subsections_needs_whereas_every_other_year_we_would_continue_to_have_everyone_gather)
+
+plot_it <- function(variable_name) {
+  
+quosure <- quo(!!sym(variable_name))
+  
+survey_df %>% 
+  dplyr::select(variable = !!quosure) %>% 
+  tidyr::separate_rows(variable, sep = ", ") %>%
+  dplyr::count(sum = variable) %>%
+  ggplot(aes(x = reorder(sum, -n), y = n))  + 
+  theme_minimal() +
+  geom_text(aes(label = n, y = n + 2)) + 
+  geom_histogram(position = "dodge", stat = "identity", fill = "#797EF6") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(x = "", subtitle = "", title = NULL)
+}
+```
+
+```{r, echo = FALSE, collapse = TRUE, message=FALSE, warning = FALSE}
+# Data Cleaning 
+survey_df <- survey_df %>% 
+ dplyr::mutate(biannual_vote = dplyr::case_when(biannual_vote == "Yes I really like this idea" ~ "Yes", 
+                   biannual_vote == "I am strongly opposed this idea and want the whole family to gather every year" ~ "No", 
+                   biannual_vote == "I am neutral about this idea." ~ "Neutral", 
+               TRUE ~ biannual_vote)) %>% 
+  dplyr::mutate(top_choice = dplyr::case_when(top_choice == "Campbell Cove Campground again!" ~ "Campbell Cove", 
+                                              top_choice == "A campground in Michigan or a nearby state (TBD)" ~ "Midwest campground",
+                                              top_choice == "Other - write in your preference below" ~ if_you_chose_other_for_your_first_choice_please_write_in_your_preferred_location_here,
+                                              TRUE ~ top_choice)) %>% 
+  dplyr::mutate(second_choice = dplyr::case_when(second_choice == "Campbell Cove Campground again!" ~ "Campbell Cove", 
+                                                 second_choice == "A campground in the midwest (TBD)" ~ "Midwest campground",
+                                                 second_choice == "Other - write in your preference below" ~ if_you_chose_other_for_your_second_choice_please_write_in_your_preferred_location_here,
+                                                 TRUE ~ second_choice))
+                                                 
+
+```
+
+### Which is your top choice location?
+
+```{r, echo = FALSE, collapse = TRUE, message=FALSE, warning = FALSE}
+plot_it("top_choice")
+ggsave("top_choice.png")
+```
+
+### What's your second choice location? 
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+plot_it("second_choice")
+```
+
+### Biannual Spinoffs idea
+
+>Would you be open to a biannual camp schedule where the full family camp happens every other year? In the in-between years, families could still get together, but potentially splitting into multiple groups allowing more flexibility on timing and location. 
+
+>These spin off trips would be easier to allow folks to accommodate their subsections’ needs whereas every other year we would continue to have everyone gather.
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+plot_it("biannual_vote")
+```
+
+
+## Hindrance Votes 
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+place <- unlist(strsplit(survey_df$would_any_of_the_following_lodging_options_would_make_it_significantly_harder_for_you_to_attend_the_camping_trip_next_year, ", "))
+
+subtract_df <- data.frame(table(place)) %>% 
+  dplyr::arrange(desc(Freq)) %>% 
+  dplyr::mutate(place = as.character(place)) %>% 
+  dplyr::rename(subtractors = Freq)
+
+knitr::kable(subtract_df)
+```
+## Final score calculation 
+
+- Top choices are given 2 points 
+- Second choices are given 1 point 
+- Any places that were selected as "significantly harder for you to attend the camping trip next year?" Are awarded -1 points 
+
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+
+score_df <- data.frame(
+  place = c(survey_df$top_choice, survey_df$second_choice), 
+  points = c(rep(2, length(survey_df$top_choice)), rep(1, length(survey_df$second_choice)))
+) %>% 
+  dplyr::group_by(place) %>% 
+  dplyr::summarize(total = sum(points, na.rm = TRUE)) %>% 
+  dplyr::left_join(subtract_df, by = "place") %>% 
+  dplyr::mutate(subtractors = dplyr::case_when(is.na(subtractors) ~ 0, 
+                                               TRUE ~ subtractors), 
+                final_score = total - subtractors) %>% 
+    dplyr::arrange(desc(final_score))
+
+knitr::kable(score_df) 
+```
+
+
+
+
