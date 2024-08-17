@@ -8,8 +8,10 @@ output: html_document
 # Report Summary: 
 
 
-### Some notes about how this was done: 
-
+Notes on data cleaning: Some consolidation was done to make answers parallel but I tried to stay true to what I felt the responder was saying.
+For example "Equally, I’d be good with Hocking Hills or a nearby campground In Michigan or nearby state" was be recorded into a vote for "A campground in Michigan or a nearby
+state (TBD)" and "I would love to stay at the Savonen's lakehouse but am afraid it would be too crowded if everyone who was there this year was in attendance" was recorded to a vote against "Savonen's lakehouse". 
+"I am OK with wherever. My answers are so helpful!" or similar answers was recoded into "NA".
 
 ```{r setup, include=FALSE, collapse = TRUE, message=FALSE}
 library(googlesheets4)
@@ -56,6 +58,7 @@ survey_df <- survey_df %>%
   dplyr::mutate(second_choice = dplyr::case_when(second_choice == "Campbell Cove Campground again!" ~ "Campbell Cove", 
                                                  second_choice == "A campground in the midwest (TBD)" ~ "Midwest campground",
                                                  second_choice == "Other - write in your preference below" ~ if_you_chose_other_for_your_second_choice_please_write_in_your_preferred_location_here,
+                                                 
                                                  TRUE ~ second_choice))
                                                  
 
