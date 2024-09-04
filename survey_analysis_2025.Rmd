@@ -7,6 +7,8 @@ output: html_document
 
 # Report Summary: 
 
+- 
+
 Notes on data cleaning: Some consolidation was done to make answers parallel but I tried to stay true to what I felt the responder was saying.
 For example "Equally, I’d be good with Hocking Hills or a nearby campground In Michigan or nearby state" was be recorded into a vote for "A campground in Michigan or a nearby
 state (TBD)" and "I would love to stay at the Savonen's lakehouse but am afraid it would be too crowded if everyone who was there this year was in attendance" was recorded to a vote against "Savonen's lakehouse". 
