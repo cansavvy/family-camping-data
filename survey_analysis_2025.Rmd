@@ -1,18 +1,55 @@
 ---
 title: "Family Camping Trip Survey 2024"
 author: "Candace Savonen"
-date: "08/16/24"
-output: html_document
+date: "09/4/24"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapse: false
 ---
 
-# Report Summary: 
 
-- 
+# Too Long; Didn't Read:
 
-Notes on data cleaning: Some consolidation was done to make answers parallel but I tried to stay true to what I felt the responder was saying.
-For example "Equally, I’d be good with Hocking Hills or a nearby campground In Michigan or nearby state" was be recorded into a vote for "A campground in Michigan or a nearby
-state (TBD)" and "I would love to stay at the Savonen's lakehouse but am afraid it would be too crowded if everyone who was there this year was in attendance" was recorded to a vote against "Savonen's lakehouse". 
-"I am OK with wherever. My answers are so helpful!" or similar answers was recoded into "NA".
+- People loved the revamped Euchre tournament but some missed the big breakfast.
+- The Savonen's lakehouse is "mildly controversal": It is both the most popular top choice but also the most commonly voted as making it less likely for others to be able to attend.
+- The Midwest campground is the most favorable since it was not voted as a hindrance.
+- Folks are neutral about doing a biannual spinoff but alternative suggestions are to rotate what location we do the camping trip in and don't shame people for not attending.
+- People liked WhatsApp but may need more guidelines on how to use it effectively so others don't miss info
+
+**The Bottom line** I propose based on this information we choose a Midwest campground and attempt to rotate the location each year. We should also keep the Euchre tournament as is (but with a time limit) and make guidelines around how to use WhatsApp.
+
+## Activities:
+_Of the group meals and activities planned which would you be most disappointed if it did not occur again next year?_
+
+**Bottom line:** The Euchre tournament stands out as the clear favorite among the responses, with group meals and campfire activities also being popular.
+
+- Euchre Tournament: This was by far the most frequently mentioned activity. Many respondents specifically highlighted the Euchre tournament as something they would be most disappointed to lose.
+- Campfires and Games: Several people mentioned enjoying the campfires, often in conjunction with games or chatting.
+- Trivia was favored and mentioned as being "a blast"
+- Group Meals: Various group meals were mentioned, including:
+  - Pizza night
+  - BBQ
+  - General group meals as a time for everyone to gather
+- Card Games: Besides Euchre, other card games were mentioned as enjoyable activities.
+- Hiking was noted by one respondent
+
+
+## Planning feedback:
+
+**Bottom line:** People liked WhatApp but moving forward we'll have to figure out some semi-structured guidelines for how to use it most effectively.
+
+- People liked using WhatsApp the most.
+  - WhatsApp was initially challenging for adoption but people liked it later.
+  - Some information wasn't shared in WhatsApp and because of no signals clarification couldn't be made
+  - Lengthy threads in the app were also noted as confusing.
+- Surveys were also mentioned as something people liked.
+- Appreciation for exploring new locations each year
+- There was an expressed desire for everyone to camp within walking distance but others expressed liking separate lodgings and need quiet places for nap times.
+- One respondent looked at the Googlesheet for planning initially and then were confused when BYOF no longer said BYOF. I should clarify two things:
+  1) Googlesheets are synced automatically so I was making updates to it whenever people gave me new information. When I initially sent it out it was meant to show what the schedule more or less looked like so then folks could decide what they'd like to organize.
+  2) The default meal plan was "BYOF" but as time went on more people volunteered other group meal coordinations so that was replaced.
 
 ```{r setup, include=FALSE, collapse = TRUE, message=FALSE}
 library(googlesheets4)
@@ -23,46 +60,84 @@ library(ggplot2)
 ```{r, echo = FALSE, collapse = TRUE, message=FALSE, warning = FALSE}
 survey_df <- read_sheet("https://docs.google.com/spreadsheets/d/1DEouR8aQ-nC5mwx359QW2ecIOF0ITGX4djmojJuQ-Tk/edit?resourcekey=&gid=1609651608#gid=1609651608")
 
-survey_df <- survey_df %>% janitor::clean_names() %>% 
-  dplyr::rename(top_choice = of_the_following_choices_which_would_be_your_top_choice_for_location_next_year, 
-                second_choice = of_the_following_choices_which_would_be_your_second_choice_for_location_next_year, 
+survey_df <- survey_df %>% janitor::clean_names() %>%
+  dplyr::rename(top_choice = of_the_following_choices_which_would_be_your_top_choice_for_location_next_year,
+                second_choice = of_the_following_choices_which_would_be_your_second_choice_for_location_next_year,
                 biannual_vote = would_you_be_open_to_a_biannual_camp_schedule_where_the_full_family_camp_happens_every_other_year_in_the_in_between_years_families_could_still_get_together_but_potentially_splitting_into_multiple_groups_allowing_more_flexibility_on_timing_and_location_these_spin_off_trips_would_be_easier_to_allow_folks_to_accommodate_their_subsections_needs_whereas_every_other_year_we_would_continue_to_have_everyone_gather)
 
 plot_it <- function(variable_name) {
-  
+
 quosure <- quo(!!sym(variable_name))
-  
-survey_df %>% 
-  dplyr::select(variable = !!quosure) %>% 
+
+survey_df %>%
+  dplyr::select(variable = !!quosure) %>%
   tidyr::separate_rows(variable, sep = ", ") %>%
   dplyr::count(sum = variable) %>%
-  ggplot(aes(x = reorder(sum, -n), y = n))  + 
+  ggplot(aes(x = reorder(sum, -n), y = n))  +
   theme_minimal() +
-  geom_text(aes(label = n, y = n + 2)) + 
-  geom_histogram(position = "dodge", stat = "identity", fill = "#797EF6") + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  geom_text(aes(label = n, y = n + 2)) +
+  geom_histogram(position = "dodge", stat = "identity", fill = "#797EF6") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   labs(x = "", subtitle = "", title = NULL)
 }
 ```
 
 ```{r, echo = FALSE, collapse = TRUE, message=FALSE, warning = FALSE}
-# Data Cleaning 
-survey_df <- survey_df %>% 
- dplyr::mutate(biannual_vote = dplyr::case_when(biannual_vote == "Yes I really like this idea" ~ "Yes", 
-                   biannual_vote == "I am strongly opposed this idea and want the whole family to gather every year" ~ "No", 
-                   biannual_vote == "I am neutral about this idea." ~ "Neutral", 
-               TRUE ~ biannual_vote)) %>% 
-  dplyr::mutate(top_choice = dplyr::case_when(top_choice == "Campbell Cove Campground again!" ~ "Campbell Cove", 
+# Data Cleaning
+survey_df <- survey_df %>%
+ dplyr::mutate(biannual_vote = dplyr::case_when(biannual_vote == "Yes I really like this idea" ~ "Yes",
+                   biannual_vote == "I am strongly opposed this idea and want the whole family to gather every year" ~ "No",
+                   biannual_vote == "I am neutral about this idea." ~ "Neutral",
+               TRUE ~ biannual_vote)) %>%
+  dplyr::mutate(top_choice = dplyr::case_when(top_choice == "Campbell Cove Campground again!" ~ "Campbell Cove",
                                               top_choice == "A campground in Michigan or a nearby state (TBD)" ~ "Midwest campground",
                                               top_choice == "Other - write in your preference below" ~ if_you_chose_other_for_your_first_choice_please_write_in_your_preferred_location_here,
-                                              TRUE ~ top_choice)) %>% 
-  dplyr::mutate(second_choice = dplyr::case_when(second_choice == "Campbell Cove Campground again!" ~ "Campbell Cove", 
+                                              TRUE ~ top_choice)) %>%
+  dplyr::mutate(second_choice = dplyr::case_when(second_choice == "Campbell Cove Campground again!" ~ "Campbell Cove",
                                                  second_choice == "A campground in the midwest (TBD)" ~ "Midwest campground",
                                                  second_choice == "Other - write in your preference below" ~ if_you_chose_other_for_your_second_choice_please_write_in_your_preferred_location_here,
-                                                 
-                                                 TRUE ~ second_choice))
-                                                 
 
+                                                 TRUE ~ second_choice))
+
+
+```
+
+## Location choices
+
+**Bottom line** Savonen's lakehouse has split feelings. It is a popular first choice but also the most negatively voted location choice as well. Midwest campground is a generally favorable location choice.
+
+### Final score calculation
+
+- Top choices are given 2 points
+- Second choices are given 1 point
+- Any places that were selected as "significantly harder for you to attend the camping trip next year?" Are awarded -1 points
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+place <- unlist(strsplit(survey_df$would_any_of_the_following_lodging_options_would_make_it_significantly_harder_for_you_to_attend_the_camping_trip_next_year, ", "))
+
+subtract_df <- data.frame(table(place)) %>%
+  dplyr::arrange(desc(Freq)) %>%
+  dplyr::mutate(place = as.character(place)) %>%
+  dplyr::rename(subtractors = Freq)
+
+knitr::kable(subtract_df)
+```
+
+```{r, echo = FALSE, message=FALSE, warning = FALSE}
+
+score_df <- data.frame(
+  place = c(survey_df$top_choice, survey_df$second_choice),
+  points = c(rep(2, length(survey_df$top_choice)), rep(1, length(survey_df$second_choice)))
+) %>%
+  dplyr::group_by(place) %>%
+  dplyr::summarize(total = sum(points, na.rm = TRUE)) %>%
+  dplyr::left_join(subtract_df, by = "place") %>%
+  dplyr::mutate(subtractors = dplyr::case_when(is.na(subtractors) ~ 0,
+                                               TRUE ~ subtractors),
+                final_score = total - subtractors) %>%
+    dplyr::arrange(desc(final_score))
+
+knitr::kable(score_df)
 ```
 
 ### Which is your top choice location?
@@ -72,59 +147,54 @@ plot_it("top_choice")
 ggsave("top_choice.png")
 ```
 
-### What's your second choice location? 
+### What's your second choice location?
 
 ```{r, echo = FALSE, message=FALSE, warning = FALSE}
 plot_it("second_choice")
 ```
 
-### Biannual Spinoffs idea
+### Would any of the following lodging options would make it significantly harder for you to attend the camping trip next year?
 
->Would you be open to a biannual camp schedule where the full family camp happens every other year? In the in-between years, families could still get together, but potentially splitting into multiple groups allowing more flexibility on timing and location. 
+
+**Bottom line** Overall most people did not have any location that they found would hinder their attendance. However a small minority of five people cite the Savonen's lakehouse as being a significant hindrance to attend both because of difficult to get there and concerns for crowdness.
+
+## Biannual Spinoffs idea
+
+>Would you be open to a biannual camp schedule where the full family camp happens every other year? In the in-between years, families could still get together, but potentially splitting into multiple groups allowing more flexibility on timing and location.
 
 >These spin off trips would be easier to allow folks to accommodate their subsections’ needs whereas every other year we would continue to have everyone gather.
+
+
+**Bottom line** People are largely neutral about this idea. There's a slightly higher vote for it than against but most are neutral. Alternative strategies contributed by individuals are to rotate the camping location so that it is easier for our geographically spread family to attend.
 
 ```{r, echo = FALSE, message=FALSE, warning = FALSE}
 plot_it("biannual_vote")
 ```
 
+## Any additional thoughts responses:
 
-## Hindrance Votes 
+### Positive experiences:
 
-```{r, echo = FALSE, message=FALSE, warning = FALSE}
-place <- unlist(strsplit(survey_df$would_any_of_the_following_lodging_options_would_make_it_significantly_harder_for_you_to_attend_the_camping_trip_next_year, ", "))
+- Appreciation for the campground and nearby activities
+- Enjoyment of specific activities: Pickleball, Trivia, Euchre
+- Appreciation for amenities and nearby attractions (brewery, winery, homes)
+- Proximity to a grocery store
+- Many consider the trips a summer highlight
 
-subtract_df <- data.frame(table(place)) %>% 
-  dplyr::arrange(desc(Freq)) %>% 
-  dplyr::mutate(place = as.character(place)) %>% 
-  dplyr::rename(subtractors = Freq)
+### Concerns and suggestions:
 
-knitr::kable(subtract_df)
-```
-## Final score calculation 
+- Some missed the big breakfast
+- Dissatisfaction with the group being spread out, unlike previous locations
+- Concerns about the group size becoming too large
+- Weather concerns: August heat affecting group interactions
+- Mixed feelings about the change from the "old way" of organizing
+- Suggestion to rotate camp locations to accommodate East Coast participants
+- Discussion about making the trip biannual, with concerns about increased pressure on attendance
+- Observation that smaller groups are forming within the larger group
+- Suggestion to avoid shaming those who can't attend
 
-- Top choices are given 2 points 
-- Second choices are given 1 point 
-- Any places that were selected as "significantly harder for you to attend the camping trip next year?" Are awarded -1 points 
+### Notes on data cleaning
 
+Claude.AI was used to assist the qualitative summarization. 
 
-```{r, echo = FALSE, message=FALSE, warning = FALSE}
-
-score_df <- data.frame(
-  place = c(survey_df$top_choice, survey_df$second_choice), 
-  points = c(rep(2, length(survey_df$top_choice)), rep(1, length(survey_df$second_choice)))
-) %>% 
-  dplyr::group_by(place) %>% 
-  dplyr::summarize(total = sum(points, na.rm = TRUE)) %>% 
-  dplyr::left_join(subtract_df, by = "place") %>% 
-  dplyr::mutate(subtractors = dplyr::case_when(is.na(subtractors) ~ 0, 
-                                               TRUE ~ subtractors), 
-                final_score = total - subtractors) %>% 
-    dplyr::arrange(desc(final_score))
-
-knitr::kable(score_df) 
-```
-
-
-
-
+Some consolidation was done to make answers parallel but I tried to stay true to what I felt the responder was saying. For example “Equally, I’d be good with Hocking Hills or a nearby campground In Michigan or nearby state” was be recorded into a vote for “A campground in Michigan or a nearby state (TBD)” and “I would love to stay at the Savonen’s lakehouse but am afraid it would be too crowded if everyone who was there this year was in attendance” was recorded to a vote against “Savonen’s lakehouse”. “I am OK with wherever. My answers are so helpful!” or similar answers was recoded into “NA”.
